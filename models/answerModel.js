@@ -203,7 +203,7 @@ class AnswerModel {
    .limit(1)
    .single()
   if (error) {
-   console.log("modelll", error)
+   console.log("model", error)
    throw new Error("Failed to fetch answers with questions: " + error.message)
   }
   return data
