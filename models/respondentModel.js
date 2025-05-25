@@ -167,18 +167,30 @@ class RespondentModel {
 
   // fungsi delete respondent
   async deleteRespondentById(respondent_id) {
-    const { data, error } = await db.from("respondents").delete().eq("respondent_id", respondent_id)
+    const { data, error } = await db
+    .from("respondents")
+    .delete()
+    .eq("respondent_id", respondent_id)
+    .select()
 
     if (error) {
       throw new Error(error.message)
     }
 
-    return data
+    const fileName = `respondents/respondent-${respondent_id}.jpg`
+
+    const { error: deleteError } = await db.storage.from("survei").remove([fileName])
+
+    if (deleteError) {
+      throw new Error("Failed to delete file: " + deleteError.message)
+    }
+    
+    return { success: true, message: "Respondent deleted successfully"}
   }
 
   async uploadRespondentPhoto(fileBuffer, respondent_id, mimeType) {
     // Generate fileName dengan respondent_id dan timestamp supaya unik
-    const fileName = `respondents/respondent-${respondent_id}-${Date.now()}.jpg`
+    const fileName = `respondents/respondent-${respondent_id}.jpg`
 
     // Upload file ke bucket 'survei'
     const { data, error: uploadError } = await db.storage.from("survei").upload(fileName, fileBuffer, {
@@ -214,67 +226,3 @@ class RespondentModel {
 }
 
 export default new RespondentModel()
-
-// const createOrUpdateRespondent = async ({Id, surveyorId}) => {
-//  const respondentId = `respondent-${Id}` // ID yang unik untuk responden
-//  const respondentRef = respondentCollection.doc(respondentId)
-
-//  const exists = (await respondentRef.get()).exists
-//  if (exists) {
-//   throw new Error("Respondent already exists")
-//  }
-
-//  const respondentData = {
-//   Id: respondentId,
-//   surveyorId: `surveyor-${surveyorId}`,
-//   createdAt: Date.now()
-//  }
-
-//  await respondentRef.set(respondentData, {merge: true}) // Gunakan merge: true agar data baru masuk atau update
-//  return respondentData
-// }
-
-// const getRespondentById = async (Id) => {
-//  const respondentId = `respondent-${Id}`
-//  const respondentRef = respondentCollection.doc(respondentId)
-//  const doc = await respondentRef.get()
-//  if (!doc.exists) {
-//   throw new Error("Respondent not found")
-//  }
-//  return doc.data()
-// }
-
-// const getAllRespondent = async () => {
-//  const snapshot = await respondentCollection.get()
-//  if (snapshot.empty) {
-//   throw new Error("No respondents found")
-//  }
-//  return snapshot.docs.map((doc) => doc.data())
-// }
-
-// const updateRespondent = async (Id, updatedData) => {
-//  const respondentId = `respondent-${Id}`
-//  const respondentRef = respondentCollection.doc(respondentId)
-//  const doc = await respondentRef.get()
-//  if (!doc.exists) {
-//   throw new Error("Respondent not found")
-//  }
-//  delete updatedData.Id // Hapus Id dari data yang diupdate
-//  delete updatedData.surveyorId // Hapus surveyorId dari data yang diupdate
-//  await respondentRef.update(updatedData)
-//  const updatedRespondent = await respondentRef.get()
-//  return updatedRespondent.data()
-// }
-
-// const deleteRespondentById = async (Id) => {
-//  const respondentId = `respondent-${Id}`
-//  const respondentRef = respondentCollection.doc(respondentId)
-//  const doc = await respondentRef.get()
-//  if (!doc.exists) {
-//   throw new Error("Respondent not found")
-//  }
-//  await respondentRef.delete()
-//  return "Respondent deleted successfully"
-// }
-
-// export {createOrUpdateRespondent, getRespondentById, getAllRespondent, updateRespondent, deleteRespondentById}
